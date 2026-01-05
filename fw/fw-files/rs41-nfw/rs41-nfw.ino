@@ -936,17 +936,21 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
   // This has the effect of padding out the unused bytes in the packet with zeros
   memset(uncoded_buffer, 0, HORUS_UNCODED_BUFFER_SIZE);
 
+  // Increment packet count
+  horusPacketCount++;
+
   // Should check how this is allocated in memory.
 
   // Hardcoded dummy test packet. 
   // Need to check how this is allocated in memory. how much it uses.
+  // .. also does it get cleared?
   horusTelemetry asnMessage = {
         .payloadCallsign  = "VK3FUR",
-        .sequenceNumber = 2,
-        .timeOfDaySeconds  = 30,
-        .latitude = 90,
-        .longitude = 90,
-        .altitudeMeters = 1000,
+        .sequenceNumber = horusPacketCount,
+        .timeOfDaySeconds  = gpsHours*3600 + gpsMinutes*60 + gpsSeconds,
+        .latitude = (int)(gpsLat*100000),
+        .longitude = (int)(gpsLong*100000),
+        .altitudeMeters = gpsAlt,
         .extraSensors = {
           .nCount=2,
           .arr = {
@@ -1032,7 +1036,7 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
         int encodedSize = BitStream_GetLength(&encodedMessage);
 
         // Determine the required frame size.
-        // Probably should do this from a list of valid sizes.
+        // Probably should do this from a list of valid sizes in a neater manner
         int frameSize = 128;
         if (encodedSize <= 30){
           frameSize = 32;
@@ -1059,9 +1063,8 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
           xdataSerial.print(frameSize);
         }
 
-        return encodedSize;
+        return frameSize;
     }
-
 
     return 0;
 }
