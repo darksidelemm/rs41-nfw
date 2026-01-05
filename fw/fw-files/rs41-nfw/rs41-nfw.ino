@@ -16,6 +16,10 @@ https://github.com/Nevvman18/rs41-nfw
 //#include "horus_l2.cpp"
 #include <SPI.h>
 #include <TinyGPSPlus.h>
+
+#include "HorusBinaryV3.h"
+
+
 TinyGPSPlus gps;
 
 
@@ -129,7 +133,7 @@ int pipRepeat = 3;                  //pip signal repeat count in 1 transmit grou
 int pipRadioPower = 6; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
 bool horusEnable = true;  //horus v2 tx mode
-float horusFrequencyMhz = 437.6;
+float horusFrequencyMhz = 434.2;
 unsigned long horusWait = 0;           //same as in pip but after horus
 unsigned int horusPayloadId = 256;
 int horusBdr = 100;
@@ -141,7 +145,7 @@ unsigned long horusSecondTransmissionWait = 0;           //same
 unsigned int horusSecondTransmissionRepeatCount = 1;
 unsigned long horusSecondTransmissionInterval = 0;  //set to 0 for default delay (defined in horusWait or powerSaveHorusWait), otherwise will deterimne delay between transmissions if used with repeatCount > 1 (more than 1 teransmission in cycle)
 
-bool aprsEnable = true;
+bool aprsEnable = false;
 float aprsFrequencyMhz = 432.5;
 unsigned long aprsWait = 0;
 char aprsCall[] = "N0CALL";  // Callsign
@@ -206,7 +210,7 @@ int gpsSatsWarnValue = 4;
 bool ubloxGpsAirborneMode = true;             //sets the uBlox GPS module to the Airborne 1G Dynamic Model, which should prevent from loosing fix above 18km altitude
 int gpsNmeaMsgWaitTime = 1250;                //waiting time for gps message
 unsigned long gpsTimeoutWatchdog = 1800000;   //in milliseconds, the time after which the GPS chip resets if the position is not valid (no fix), kind of a watchdog, helps to retain the fix quicker, default 30 minutes (1800000 ms), set to 0 to disable
-bool improvedGpsPerformance = true;           //if true, the device improves the gps fix achieving performance. The issue is that the radio chip (Si4032) makes noise (so-called spurious emmissions), which affects the GPS L-band too, causing the receiver to have an overall lower sensitivity. This option changes the TX interval to 120s if the GPS didn't catch a fix; after GPS sees enough satelites, the TX interval goes back to default set. The green LED blinks when waiting.
+bool improvedGpsPerformance = false;           //if true, the device improves the gps fix achieving performance. The issue is that the radio chip (Si4032) makes noise (so-called spurious emmissions), which affects the GPS L-band too, causing the receiver to have an overall lower sensitivity. This option changes the TX interval to 120s if the GPS didn't catch a fix; after GPS sees enough satelites, the TX interval goes back to default set. The green LED blinks when waiting.
 bool disableGpsImprovementInFlight = true;    //this settings disables the improvedGpsPerformance features when the sonde is in-flight, because it can cause a loss of data for up to 2 minutes. If you fly under interference conditions, set this to false. Else - consider setting to true;
 float gpsLat = 0;                             //change this to set the default coordinates (updated with GPS position if enabled)
 float gpsLong = 0;                            //change this to set the default coordinates (updated with GPS position if enabled)
@@ -216,7 +220,7 @@ unsigned long gpsPowerSaveDebounce = 300000;  //debounce to limit setting the GP
 
 
 //Sensors
-bool sensorBoomEnable = true;  //enables sensor boom measurement  and diagnostics
+bool sensorBoomEnable = false;  //enables sensor boom measurement  and diagnostics
 
 float mainTemperatureCorrectionC = 3; //For most accurate readings, compensate by this correction factor and compare with another thermometer. This can be calibrated with autoTemperatureCalibration. The sensor booms are nearly similairly linear between each other and the only difference between them is the temperature offset here.
 float extHeaterTemperatureCorrectionC = 35; //this can be automatially corrected by activating the option below
@@ -509,8 +513,13 @@ struct HorusBinaryPacketV2 {
 } __attribute__((packed));
 
 // Buffers and counters.
-char rawbuffer[128];    // Buffer to temporarily store a raw binary packet.
-char codedbuffer[128];  // Buffer to store an encoded binary packet
+// QI - Horus v2 - 32 bytes uncoded -> 65 bytes coded.
+// QI - Horus v3 48 bytes -> 94 bytes coded
+#define HORUS_UNCODED_BUFFER_SIZE 128
+#define HORUS_CODED_BUFFER_SIZE 256
+char rawbuffer[HORUS_UNCODED_BUFFER_SIZE];    // Buffer to temporarily store a raw binary packet.
+// QI - Expanded to 256 bytes to fit the big 128 byte (Coded) v3 packet
+char codedbuffer[HORUS_CODED_BUFFER_SIZE];  // Buffer to store an encoded binary packet
 char debugbuffer[256];  // Buffer to store debug strings
 
 uint32_t fsk4_base = 0, fsk4_baseHz = 0;
@@ -917,6 +926,145 @@ String createRttyMorsePayload() {
   return payloada;
 }
 
+// QI - Horus v3 hack
+int build_horus_binary_packet_v3(char* uncoded_buffer){
+  // Horus v3 packets are encoded using ASN1, and are encapsulated in packets
+  // of sizes 32, 48, 64, 96 or 128 bytes (before coding)
+  // The CRC16 for these packets is located at the *start* of the packet
+
+  // Erase the uncoded buffer
+  // This has the effect of padding out the unused bytes in the packet with zeros
+  memset(uncoded_buffer, 0, HORUS_UNCODED_BUFFER_SIZE);
+
+  // Should check how this is allocated in memory.
+
+  // Hardcoded dummy test packet. 
+  // Need to check how this is allocated in memory. how much it uses.
+  horusTelemetry asnMessage = {
+        .payloadCallsign  = "VK3FUR",
+        .sequenceNumber = 2,
+        .timeOfDaySeconds  = 30,
+        .latitude = 90,
+        .longitude = 90,
+        .altitudeMeters = 1000,
+        .extraSensors = {
+          .nCount=2,
+          .arr = {
+            {
+                .name = "test",
+                .values = {
+                    .kind = horusInt_PRESENT,
+                    .u = {
+                        .horusInt = {
+                          .nCount = 4,
+                            .arr = {1,2,3,4},
+                            
+                        }
+                    }
+                },
+                .exist = {
+                    .name = true,
+                    .values = true,
+                },
+                
+                
+            },
+            {
+               
+                .name = "test",
+                .values = {
+                    .kind = horusStr_PRESENT,
+                    .u = {
+                        .horusStr = "MOW"
+                    }
+                },
+                 .exist = {
+                    .name = true,
+                    .values = true,
+                },
+            },
+             
+          },
+          
+        },
+        .exist = {
+            .extraSensors = true,
+        }
+    };
+  
+
+    // The encoder needs a data structure for the serialization
+    // Again - how much memory is allocated here?
+    BitStream encodedMessage;
+
+    // The Encoder may fail and update an error code
+    int errCode;
+
+    // Initialization associates the buffer to the bit stream
+    // We want to write the uncoded message starting at 2 bytes into the message.
+
+    BitStream_Init (&encodedMessage,
+                    (unsigned char*)(uncoded_buffer+2),
+                    HORUS_UNCODED_BUFFER_SIZE
+    );
+    // Originally this function call used a MUCH larger value for count
+    //horusTelemetry_REQUIRED_BYTES_FOR_ENCODING);
+    
+    // Encode the message using uPER encoding rule
+    if (!horusTelemetry_Encode(&asnMessage,
+                        &encodedMessage,
+                        &errCode,
+                        true))
+    {  
+        // Not at this error helps that much in a flight, but it helps
+        // us when debugging!   
+        if (xdataPortMode == 1) {
+          xdataSerial.print("[error]: HORUS v3 Encoding Failed: ");
+          xdataSerial.println(errCode);
+        }
+        // Need to check what happens here.
+        return 0;
+    }
+    else 
+    {
+        // Encoding was successful!
+        // Now we need to figure out the required frame size, and add the CRC.
+        int encodedSize = BitStream_GetLength(&encodedMessage);
+
+        // Determine the required frame size.
+        // Probably should do this from a list of valid sizes.
+        int frameSize = 128;
+        if (encodedSize <= 30){
+          frameSize = 32;
+        } else if (encodedSize <= 46){
+          frameSize = 48;
+        } else if (encodedSize <= 62){
+          frameSize = 64;
+        } else if (encodedSize <= 94){
+          frameSize = 96;
+        } else if (encodedSize <= 126){
+          frameSize = 128;
+        }
+
+        // Calculate CRC16 over the frame, starting at byte 2
+        uint16_t packetCrc = (uint16_t)crc16((unsigned char *)(uncoded_buffer + 2),
+                                     frameSize - 2);
+        // Write CRC into bytes 0–1 of the packet
+        memcpy(uncoded_buffer, &packetCrc, sizeof(packetCrc));  // little‑endian on STM32
+
+        if (xdataPortMode == 1) {
+          xdataSerial.print("[info]: HORUS v3 Encoded: ");
+          xdataSerial.print(encodedSize);
+          xdataSerial.print(" frame: ");
+          xdataSerial.print(frameSize);
+        }
+
+        return encodedSize;
+    }
+
+
+    return 0;
+}
 
 
 int build_horus_binary_packet_v2(char* buffer) {
@@ -2113,13 +2261,14 @@ void modeChangeDelayCallback(unsigned long waitTime) {
           return;
         }
 
-        for (int j = 0; j < 5; j++) {
-          buttonHandler();
-          digitalWrite(GREEN_LED_PIN, HIGH);
-          delay(200);
-          digitalWrite(GREEN_LED_PIN, LOW);
-          delay(750);
-        }  //whole 1 wait cycle is about 5 seconds, giving about 2 minutes of total fix catching cycle
+        // QI - Removed this to help with debugging
+        // for (int j = 0; j < 5; j++) {
+        //   buttonHandler();
+        //   digitalWrite(GREEN_LED_PIN, HIGH);
+        //   delay(200);
+        //   digitalWrite(GREEN_LED_PIN, LOW);
+        //   delay(750);
+        // }  //whole 1 wait cycle is about 5 seconds, giving about 2 minutes of total fix catching cycle
       }
   }
     else {
@@ -2999,7 +3148,17 @@ void horusTx() {
     }
 
     if (radioEnablePA) {
-      int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+      //int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+
+      // QI - OVERRIDE for Horus v3 testing
+      // The rest of the function is the same though
+      int pkt_len = build_horus_binary_packet_v3(rawbuffer);
+      // Bomb out if we can't encode
+      if (pkt_len == 0){
+        return;
+      }
+
+
       int coded_len = horus_l2_encode_tx_packet((unsigned char*)codedbuffer, (unsigned char*)rawbuffer, pkt_len);
 
       if (xdataPortMode == 1) {
