@@ -17,6 +17,7 @@ https://github.com/Nevvman18/rs41-nfw
 #include <SPI.h>
 #include <TinyGPSPlus.h>
 
+// Two includes for Horus Binary v3
 #include "HorusBinaryV3.h"
 
 
@@ -211,7 +212,7 @@ int gpsSatsWarnValue = 4;
 bool ubloxGpsAirborneMode = true;             //sets the uBlox GPS module to the Airborne 1G Dynamic Model, which should prevent from loosing fix above 18km altitude
 int gpsNmeaMsgWaitTime = 1250;                //waiting time for gps message
 unsigned long gpsTimeoutWatchdog = 1800000;   //in milliseconds, the time after which the GPS chip resets if the position is not valid (no fix), kind of a watchdog, helps to retain the fix quicker, default 30 minutes (1800000 ms), set to 0 to disable
-bool improvedGpsPerformance = false;           //if true, the device improves the gps fix achieving performance. The issue is that the radio chip (Si4032) makes noise (so-called spurious emmissions), which affects the GPS L-band too, causing the receiver to have an overall lower sensitivity. This option changes the TX interval to 120s if the GPS didn't catch a fix; after GPS sees enough satelites, the TX interval goes back to default set. The green LED blinks when waiting.
+bool improvedGpsPerformance = true;           //if true, the device improves the gps fix achieving performance. The issue is that the radio chip (Si4032) makes noise (so-called spurious emmissions), which affects the GPS L-band too, causing the receiver to have an overall lower sensitivity. This option changes the TX interval to 120s if the GPS didn't catch a fix; after GPS sees enough satelites, the TX interval goes back to default set. The green LED blinks when waiting.
 bool disableGpsImprovementInFlight = true;    //this settings disables the improvedGpsPerformance features when the sonde is in-flight, because it can cause a loss of data for up to 2 minutes. If you fly under interference conditions, set this to false. Else - consider setting to true;
 float gpsLat = 0;                             //change this to set the default coordinates (updated with GPS position if enabled)
 float gpsLong = 0;                            //change this to set the default coordinates (updated with GPS position if enabled)
@@ -967,7 +968,6 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
                         .horusInt = {
                           .nCount = 1,
                             .arr = {deviceDebugState},
-                            
                         }
                     }
                 },
@@ -1059,22 +1059,33 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
 
     BitStream_Init (&encodedMessage,
                     (unsigned char*)(uncoded_buffer+2),
-                    HORUS_UNCODED_BUFFER_SIZE
+                    HORUS_UNCODED_BUFFER_SIZE-1
     );
     // Originally this function call used a MUCH larger value for count
     //horusTelemetry_REQUIRED_BYTES_FOR_ENCODING);
     
     // Encode the message using uPER encoding rule
+
+    // We patch in assert functionality in assert_override.h
+    // Before running encode we set assert_value = 0
+    // Then check the value in assert_value
+    assert_value = 0;
+
     if (!horusTelemetry_Encode(&asnMessage,
                         &encodedMessage,
                         &errCode,
-                        true))
+                        true) || assert_value != 0)
     {  
         // Not at this error helps that much in a flight, but it helps
         // us when debugging!   
         if (xdataPortMode == 1) {
-          xdataSerial.print("[error]: HORUS v3 Encoding Failed: ");
-          xdataSerial.println(errCode);
+          if(errCode > 0){
+            xdataSerial.print("[error]: HORUS v3 Encoding Failed: ");
+            xdataSerial.println(errCode);
+          }
+          if(assert_value != 0){
+            xdataSerial.println("[error]: HORUS v3 Assert Failure, maybe hit buffer size limit");
+          }
         }
         // Need to check what happens here.
         return 0;
@@ -2314,14 +2325,13 @@ void modeChangeDelayCallback(unsigned long waitTime) {
           return;
         }
 
-        // QI - Removed this to help with debugging
-        // for (int j = 0; j < 5; j++) {
-        //   buttonHandler();
-        //   digitalWrite(GREEN_LED_PIN, HIGH);
-        //   delay(200);
-        //   digitalWrite(GREEN_LED_PIN, LOW);
-        //   delay(750);
-        // }  //whole 1 wait cycle is about 5 seconds, giving about 2 minutes of total fix catching cycle
+        for (int j = 0; j < 5; j++) {
+          buttonHandler();
+          digitalWrite(GREEN_LED_PIN, HIGH);
+          delay(200);
+          digitalWrite(GREEN_LED_PIN, LOW);
+          delay(750);
+        }  //whole 1 wait cycle is about 5 seconds, giving about 2 minutes of total fix catching cycle
       }
   }
     else {

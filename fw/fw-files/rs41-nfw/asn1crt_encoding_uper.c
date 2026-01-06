@@ -1,5 +1,5 @@
 #include <string.h>
-#include <assert.h>
+#include "assert_override.h"
 #include <math.h>
 #include <float.h>
 

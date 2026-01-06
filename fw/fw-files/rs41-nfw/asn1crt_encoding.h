@@ -62,7 +62,11 @@ flag BitStream_DecodeConstraintWholeNumber(BitStream* pBitStrm, asn1SccSint* v, 
 flag BitStream_DecodeConstraintPosWholeNumber(BitStream* pBitStrm, asn1SccUint* v, asn1SccUint min, asn1SccUint max);
 
 
+flag BitStream_DecodeConstraintWholeNumberInt16(BitStream* pBitStrm, int16_t* v, int16_t min, int16_t max);
+flag BitStream_DecodeConstraintWholeNumberInt32(BitStream* pBitStrm, int32_t* v, int32_t min, int32_t max);
 
+flag BitStream_DecodeConstraintPosWholeNumberUInt8 (BitStream* pBitStrm, uint8_t* v,  uint8_t min,  uint8_t max);
+flag BitStream_DecodeConstraintPosWholeNumberUInt16(BitStream* pBitStrm, uint16_t* v, uint16_t min, uint16_t max);
 
 
 int GetNumberOfBitsForNonNegativeInteger(asn1SccUint v);

@@ -307,7 +307,6 @@ extern const asn1SccUint32 ber_aux[];
 #pragma warning( disable : 4127)
 #endif
 
-#define ASSERT_OR_RETURN_FALSE(_Expression) do { assert(_Expression); if (!(_Expression)) return FALSE;} while(0)
 
 #ifdef  __cplusplus
 }
