@@ -136,6 +136,7 @@ bool horusEnable = true;  //horus v2 tx mode
 float horusFrequencyMhz = 434.2;
 unsigned long horusWait = 0;           //same as in pip but after horus
 unsigned int horusPayloadId = 256;
+#define HORUS_V3_CALLSIGN "HORUS-V3" // Callsign for Horus v3
 int horusBdr = 100;
 int horusRadioPower = 5; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
@@ -256,7 +257,7 @@ int heatingTemperatureThreshold = 2; //turns on only in conditions where condens
 int heatingHumidityThreshold = 90; //turns on only in conditions where condensation would be really possible
 
 
-bool enablePressureEstimation = false; //This option enables an algorithm that estimates the pressure of dry air, based on altitude, temperature and humidity. It is NOT read from any pressure sensor, like an RPM411 board (now!), but can give you a fair enough reading, more of an 'order of magnitude'. The pressureValue is sent via Horus v2 and APRS WX
+bool enablePressureEstimation = true; //This option enables an algorithm that estimates the pressure of dry air, based on altitude, temperature and humidity. It is NOT read from any pressure sensor, like an RPM411 board (now!), but can give you a fair enough reading, more of an 'order of magnitude'. The pressureValue is sent via Horus v2 and APRS WX
 unsigned long seaLevelPressure = 101325; //Sea level pressure in Pascals, used to correctly estimate the pressure in the upper layers
 
 
@@ -930,7 +931,7 @@ String createRttyMorsePayload() {
 int build_horus_binary_packet_v3(char* uncoded_buffer){
   // Horus v3 packets are encoded using ASN1, and are encapsulated in packets
   // of sizes 32, 48, 64, 96 or 128 bytes (before coding)
-  // The CRC16 for these packets is located at the *start* of the packet
+  // The CRC16 for these packets is located at the *start* of the packet, still little-endian encoded
 
   // Erase the uncoded buffer
   // This has the effect of padding out the unused bytes in the packet with zeros
@@ -944,24 +945,28 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
   // Hardcoded dummy test packet. 
   // Need to check how this is allocated in memory. how much it uses.
   // .. also does it get cleared?
+
+
   horusTelemetry asnMessage = {
-        .payloadCallsign  = "VK3FUR",
+        .payloadCallsign  = HORUS_V3_CALLSIGN,
         .sequenceNumber = horusPacketCount,
         .timeOfDaySeconds  = gpsHours*3600 + gpsMinutes*60 + gpsSeconds,
         .latitude = (int)(gpsLat*100000),
         .longitude = (int)(gpsLong*100000),
         .altitudeMeters = gpsAlt,
+        // Example of adding some custom fields.
         .extraSensors = {
-          .nCount=2,
+          .nCount=1, // Number of custom fields.
           .arr = {
+            // Example of an array of integers 
             {
-                .name = "test",
+                .name = "debug", // This is transmitted in the packet if .exist/name is true
                 .values = {
                     .kind = horusInt_PRESENT,
                     .u = {
                         .horusInt = {
-                          .nCount = 4,
-                            .arr = {1,2,3,4},
+                          .nCount = 1,
+                            .arr = {deviceDebugState},
                             
                         }
                     }
@@ -972,30 +977,75 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
                 },
                 
                 
-            },
-            {
-               
-                .name = "test",
-                .values = {
-                    .kind = horusStr_PRESENT,
-                    .u = {
-                        .horusStr = "MOW"
-                    }
-                },
-                 .exist = {
-                    .name = true,
-                    .values = true,
-                },
-            },
-             
+            }
+            // Example of a string field
+            //,
+            // {
+            //     .name = "cty",
+            //     .values = {
+            //         .kind = horusStr_PRESENT,
+            //         .u = {
+            //             .horusStr = "AU"
+            //         }
+            //     },
+            //      .exist = {
+            //         .name = true,
+            //         .values = true,
+            //     },
+            // },
           },
-          
         },
+        .velocityHorizontalKilometersPerHour = gpsSpeedKph,
+        .gnssSatellitesVisible = gpsSats,
+        .ascentRateCentimetersPerSecond = vVCalc * 100, // m/s -> cm/s
+        .pressurehPa_x10 = (int)(pressureValue*10),
+        .temperatureCelsius_x10 = {
+            .internal = readAvgIntTemp()*10,
+            .external = mainTemperatureValue*10,
+            // I'm not sure we need to explicitly indicate which of these fields exist, but just to be safe...
+            .exist = {
+                .internal = true,
+                .external = true,
+                .custom1 = false,
+                .custom2 = false
+            }
+        },
+        .humidityPercentage = humidityValue,
+        .milliVolts = {
+            .battery = (int)(readBatteryVoltage()*1000),
+            // I'm not sure we need to explicitly indicate which of these fields exist, but just to be safe...
+            .exist = {
+                .battery = true,
+                .solar = false,
+                .custom1 = false,
+                .custom2 = false
+            }
+        },
+        // We need to explicitly specify which optional fields we want to include in the packet
         .exist = {
             .extraSensors = true,
+            .velocityHorizontalKilometersPerHour = true,
+            .gnssSatellitesVisible = true,
+            .ascentRateCentimetersPerSecond = true,
+            .pressurehPa_x10 = true,
+            .temperatureCelsius_x10 = true,
+            .humidityPercentage = true,
+            .milliVolts = true
         }
     };
-  
+
+    // Conditionally disable some of the fields if we have no valid data source for them
+
+    // Don't send pressure data if it's just 0. This is either a failed sensor or no data
+    if (pressureValue == 0){
+      asnMessage.exist.pressurehPa_x10 = false;
+    }
+
+    // Don't send external temp and humidity data if the sensor boom isn't in use
+    if (sensorBoomEnable == false){
+      asnMessage.temperatureCelsius_x10.exist.external = false;
+      asnMessage.exist.humidityPercentage = false;
+    }
 
     // The encoder needs a data structure for the serialization
     // Again - how much memory is allocated here?
@@ -1057,10 +1107,10 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
         memcpy(uncoded_buffer, &packetCrc, sizeof(packetCrc));  // little‑endian on STM32
 
         if (xdataPortMode == 1) {
-          xdataSerial.print("[info]: HORUS v3 Encoded: ");
+          xdataSerial.print("[info]: HORUS v3 ASN1: ");
           xdataSerial.print(encodedSize);
-          xdataSerial.print(" frame: ");
-          xdataSerial.print(frameSize);
+          xdataSerial.print(" Frame: ");
+          xdataSerial.println(frameSize);
         }
 
         return frameSize;

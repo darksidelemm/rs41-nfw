@@ -1210,11 +1210,11 @@ flag horusTelemetry_ascentRateCentimetersPerSecond_IsConstraintValid(const horus
 	return ret;
 }
 
-flag horusTelemetry_pressurehPa_IsConstraintValid(const horusTelemetry_pressurehPa* pVal, int* pErrCode)
+flag horusTelemetry_pressurehPa_x10_IsConstraintValid(const horusTelemetry_pressurehPa_x10* pVal, int* pErrCode)
 {
     flag ret = TRUE;
-    ret = ((*(pVal)) <= 1200UL);
-    *pErrCode = ret ? 0 :  ERR_TELEMETRY_PRESSUREHPA;
+    ret = ((*(pVal)) <= 12000UL);
+    *pErrCode = ret ? 0 :  ERR_TELEMETRY_PRESSUREHPA_X10;
 
 	return ret;
 }
@@ -1277,12 +1277,12 @@ flag horusTelemetry_IsConstraintValid(const horusTelemetry* pVal, int* pErrCode)
                                         	ret = horusTelemetry_ascentRateCentimetersPerSecond_IsConstraintValid((&(pVal->ascentRateCentimetersPerSecond)), pErrCode);
                                         }
                                         if (ret) {
-                                            if (pVal->exist.pressurehPa) {
-                                            	ret = horusTelemetry_pressurehPa_IsConstraintValid((&(pVal->pressurehPa)), pErrCode);
+                                            if (pVal->exist.pressurehPa_x10) {
+                                            	ret = horusTelemetry_pressurehPa_x10_IsConstraintValid((&(pVal->pressurehPa_x10)), pErrCode);
                                             }
                                             if (ret) {
-                                                if (pVal->exist.temperatureCelsius) {
-                                                	ret = horusTemperatureSensors_IsConstraintValid((&(pVal->temperatureCelsius)), pErrCode);
+                                                if (pVal->exist.temperatureCelsius_x10) {
+                                                	ret = horusTemperatureSensors_IsConstraintValid((&(pVal->temperatureCelsius_x10)), pErrCode);
                                                 }
                                                 if (ret) {
                                                     if (pVal->exist.humidityPercentage) {
@@ -1389,7 +1389,7 @@ void horusTelemetry_ascentRateCentimetersPerSecond_Initialize(horusTelemetry_asc
 
 	(*(pVal)) = 0LL;
 }
-void horusTelemetry_pressurehPa_Initialize(horusTelemetry_pressurehPa* pVal)
+void horusTelemetry_pressurehPa_x10_Initialize(horusTelemetry_pressurehPa_x10* pVal)
 {
 	(void)pVal;
 
@@ -1457,12 +1457,12 @@ void horusTelemetry_Initialize(horusTelemetry* pVal)
 	/*set ascentRateCentimetersPerSecond */
 	pVal->exist.ascentRateCentimetersPerSecond = 1;
 	horusTelemetry_ascentRateCentimetersPerSecond_Initialize((&(pVal->ascentRateCentimetersPerSecond)));
-	/*set pressurehPa */
-	pVal->exist.pressurehPa = 1;
-	horusTelemetry_pressurehPa_Initialize((&(pVal->pressurehPa)));
-	/*set temperatureCelsius */
-	pVal->exist.temperatureCelsius = 1;
-	horusTemperatureSensors_Initialize((&(pVal->temperatureCelsius)));
+	/*set pressurehPa_x10 */
+	pVal->exist.pressurehPa_x10 = 1;
+	horusTelemetry_pressurehPa_x10_Initialize((&(pVal->pressurehPa_x10)));
+	/*set temperatureCelsius_x10 */
+	pVal->exist.temperatureCelsius_x10 = 1;
+	horusTemperatureSensors_Initialize((&(pVal->temperatureCelsius_x10)));
 	/*set humidityPercentage */
 	pVal->exist.humidityPercentage = 1;
 	horusTelemetry_humidityPercentage_Initialize((&(pVal->humidityPercentage)));
@@ -1500,9 +1500,9 @@ flag horusTelemetry_Encode(const horusTelemetry* pVal, BitStream* pBitStrm, int*
 	                if (ret) {
 	                    BitStream_AppendBit(pBitStrm,pVal->exist.ascentRateCentimetersPerSecond);
 	                    if (ret) {
-	                        BitStream_AppendBit(pBitStrm,pVal->exist.pressurehPa);
+	                        BitStream_AppendBit(pBitStrm,pVal->exist.pressurehPa_x10);
 	                        if (ret) {
-	                            BitStream_AppendBit(pBitStrm,pVal->exist.temperatureCelsius);
+	                            BitStream_AppendBit(pBitStrm,pVal->exist.temperatureCelsius_x10);
 	                            if (ret) {
 	                                BitStream_AppendBit(pBitStrm,pVal->exist.humidityPercentage);
 	                                if (ret) {
@@ -1572,14 +1572,14 @@ flag horusTelemetry_Encode(const horusTelemetry* pVal, BitStream* pBitStrm, int*
 	                                                                                            	BitStream_EncodeConstraintWholeNumber(pBitStrm, pVal->ascentRateCentimetersPerSecond, -32767, 32767);
 	                                                                                            }
 	                                                                                            if (ret) {
-	                                                                                                /*Encode pressurehPa */
-	                                                                                                if (pVal->exist.pressurehPa) {
-	                                                                                                	BitStream_EncodeConstraintPosWholeNumber(pBitStrm, pVal->pressurehPa, 0, 1200);
+	                                                                                                /*Encode pressurehPa_x10 */
+	                                                                                                if (pVal->exist.pressurehPa_x10) {
+	                                                                                                	BitStream_EncodeConstraintPosWholeNumber(pBitStrm, pVal->pressurehPa_x10, 0, 12000);
 	                                                                                                }
 	                                                                                                if (ret) {
-	                                                                                                    /*Encode temperatureCelsius */
-	                                                                                                    if (pVal->exist.temperatureCelsius) {
-	                                                                                                    	ret = horusTemperatureSensors_Encode((&(pVal->temperatureCelsius)), pBitStrm, pErrCode, FALSE);
+	                                                                                                    /*Encode temperatureCelsius_x10 */
+	                                                                                                    if (pVal->exist.temperatureCelsius_x10) {
+	                                                                                                    	ret = horusTemperatureSensors_Encode((&(pVal->temperatureCelsius_x10)), pBitStrm, pErrCode, FALSE);
 	                                                                                                    }
 	                                                                                                    if (ret) {
 	                                                                                                        /*Encode humidityPercentage */
@@ -1677,11 +1677,11 @@ flag horusTelemetry_Decode(horusTelemetry* pVal, BitStream* pBitStrm, int* pErrC
 	                *pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY;
 	                if (ret) {
 	                    ret = BitStream_ReadBit(pBitStrm, &presenceBit);
-	                    pVal->exist.pressurehPa = presenceBit == 0 ? 0 : 1;
+	                    pVal->exist.pressurehPa_x10 = presenceBit == 0 ? 0 : 1;
 	                    *pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY;
 	                    if (ret) {
 	                        ret = BitStream_ReadBit(pBitStrm, &presenceBit);
-	                        pVal->exist.temperatureCelsius = presenceBit == 0 ? 0 : 1;
+	                        pVal->exist.temperatureCelsius_x10 = presenceBit == 0 ? 0 : 1;
 	                        *pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY;
 	                        if (ret) {
 	                            ret = BitStream_ReadBit(pBitStrm, &presenceBit);
@@ -1771,15 +1771,15 @@ flag horusTelemetry_Decode(horusTelemetry* pVal, BitStream* pBitStrm, int* pErrC
 	                                                                                        	*pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY_ASCENTRATECENTIMETERSPERSECOND;
 	                                                                                        }
 	                                                                                        if (ret) {
-	                                                                                            /*Decode pressurehPa */
-	                                                                                            if (pVal->exist.pressurehPa) {
-	                                                                                            	ret = BitStream_DecodeConstraintPosWholeNumber(pBitStrm, (&(pVal->pressurehPa)), 0, 1200);
-	                                                                                            	*pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY_PRESSUREHPA;
+	                                                                                            /*Decode pressurehPa_x10 */
+	                                                                                            if (pVal->exist.pressurehPa_x10) {
+	                                                                                            	ret = BitStream_DecodeConstraintPosWholeNumber(pBitStrm, (&(pVal->pressurehPa_x10)), 0, 12000);
+	                                                                                            	*pErrCode = ret ? 0 : ERR_UPER_DECODE_TELEMETRY_PRESSUREHPA_X10;
 	                                                                                            }
 	                                                                                            if (ret) {
-	                                                                                                /*Decode temperatureCelsius */
-	                                                                                                if (pVal->exist.temperatureCelsius) {
-	                                                                                                	ret = horusTemperatureSensors_Decode((&(pVal->temperatureCelsius)), pBitStrm, pErrCode);
+	                                                                                                /*Decode temperatureCelsius_x10 */
+	                                                                                                if (pVal->exist.temperatureCelsius_x10) {
+	                                                                                                	ret = horusTemperatureSensors_Decode((&(pVal->temperatureCelsius_x10)), pBitStrm, pErrCode);
 	                                                                                                }
 	                                                                                                if (ret) {
 	                                                                                                    /*Decode humidityPercentage */

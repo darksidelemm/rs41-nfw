@@ -369,7 +369,7 @@ typedef asn1SccUint horusTelemetry_gnssSatellitesVisible;
 
 typedef asn1SccSint horusTelemetry_ascentRateCentimetersPerSecond;
 
-typedef asn1SccUint horusTelemetry_pressurehPa;
+typedef asn1SccUint horusTelemetry_pressurehPa_x10;
 
 typedef asn1SccUint horusTelemetry_humidityPercentage;
 
@@ -390,8 +390,8 @@ typedef struct {
     unsigned long velocityHorizontalKilometersPerHour:1;
     unsigned long gnssSatellitesVisible:1;
     unsigned long ascentRateCentimetersPerSecond:1;
-    unsigned long pressurehPa:1;
-    unsigned long temperatureCelsius:1;
+    unsigned long pressurehPa_x10:1;
+    unsigned long temperatureCelsius_x10:1;
     unsigned long humidityPercentage:1;
     unsigned long milliVolts:1;
     unsigned long counts:1;
@@ -410,8 +410,8 @@ typedef struct {
     horusTelemetry_velocityHorizontalKilometersPerHour velocityHorizontalKilometersPerHour;
     horusTelemetry_gnssSatellitesVisible gnssSatellitesVisible;
     horusTelemetry_ascentRateCentimetersPerSecond ascentRateCentimetersPerSecond;
-    horusTelemetry_pressurehPa pressurehPa;
-    horusTemperatureSensors temperatureCelsius;
+    horusTelemetry_pressurehPa_x10 pressurehPa_x10;
+    horusTemperatureSensors temperatureCelsius_x10;
     horusTelemetry_humidityPercentage humidityPercentage;
     horusMilliVoltSensors milliVolts;
     horusTelemetry_counts counts;
@@ -449,8 +449,8 @@ flag horusTelemetry_gnssSatellitesVisible_IsConstraintValid(const horusTelemetry
 #define ERR_TELEMETRY_ASCENTRATECENTIMETERSPERSECOND		211  /*(-32767..32767)*/
 flag horusTelemetry_ascentRateCentimetersPerSecond_IsConstraintValid(const horusTelemetry_ascentRateCentimetersPerSecond* pVal, int* pErrCode);
 
-#define ERR_TELEMETRY_PRESSUREHPA		216  /*(0..1200)*/
-flag horusTelemetry_pressurehPa_IsConstraintValid(const horusTelemetry_pressurehPa* pVal, int* pErrCode);
+#define ERR_TELEMETRY_PRESSUREHPA_X10		216  /*(0..12000)*/
+flag horusTelemetry_pressurehPa_x10_IsConstraintValid(const horusTelemetry_pressurehPa_x10* pVal, int* pErrCode);
 
 #define ERR_TELEMETRY_HUMIDITYPERCENTAGE		226  /*(0..100)*/
 flag horusTelemetry_humidityPercentage_IsConstraintValid(const horusTelemetry_humidityPercentage* pVal, int* pErrCode);
@@ -465,7 +465,7 @@ flag horusTelemetry_customData_IsConstraintValid(const horusTelemetry_customData
 #define ERR_TELEMETRY		261  /**/
 #define ERR_TELEMETRY_EXTENSIONMARKERFORASN1CC		161  /**/
 #define ERR_TELEMETRY_EXTRASENSORS		196  /**/
-#define ERR_TELEMETRY_TEMPERATURECELSIUS		221  /**/
+#define ERR_TELEMETRY_TEMPERATURECELSIUS_X10		221  /**/
 #define ERR_TELEMETRY_MILLIVOLTS		231  /**/
 #define ERR_TELEMETRY_GNSSPOWERSAVESTATE_2		251  /**/
 flag horusTelemetry_IsConstraintValid(const horusTelemetry* pVal, int* pErrCode);
@@ -479,7 +479,7 @@ void horusTelemetry_altitudeMeters_Initialize(horusTelemetry_altitudeMeters* pVa
 void horusTelemetry_velocityHorizontalKilometersPerHour_Initialize(horusTelemetry_velocityHorizontalKilometersPerHour* pVal);
 void horusTelemetry_gnssSatellitesVisible_Initialize(horusTelemetry_gnssSatellitesVisible* pVal);
 void horusTelemetry_ascentRateCentimetersPerSecond_Initialize(horusTelemetry_ascentRateCentimetersPerSecond* pVal);
-void horusTelemetry_pressurehPa_Initialize(horusTelemetry_pressurehPa* pVal);
+void horusTelemetry_pressurehPa_x10_Initialize(horusTelemetry_pressurehPa_x10* pVal);
 void horusTelemetry_humidityPercentage_Initialize(horusTelemetry_humidityPercentage* pVal);
 void horusTelemetry_counts_Initialize(horusTelemetry_counts* pVal);
 void horusTelemetry_customData_Initialize(horusTelemetry_customData* pVal);
@@ -497,8 +497,8 @@ void horusTelemetry_Initialize(horusTelemetry* pVal);
 #define ERR_UPER_ENCODE_TELEMETRY_VELOCITYHORIZONTALKILOMETERSPERHOUR		202  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_GNSSSATELLITESVISIBLE		207  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_ASCENTRATECENTIMETERSPERSECOND		212  /**/
-#define ERR_UPER_ENCODE_TELEMETRY_PRESSUREHPA		217  /**/
-#define ERR_UPER_ENCODE_TELEMETRY_TEMPERATURECELSIUS		222  /**/
+#define ERR_UPER_ENCODE_TELEMETRY_PRESSUREHPA_X10		217  /**/
+#define ERR_UPER_ENCODE_TELEMETRY_TEMPERATURECELSIUS_X10		222  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_HUMIDITYPERCENTAGE		227  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_MILLIVOLTS		232  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_COUNTS		242  /**/
@@ -506,7 +506,7 @@ void horusTelemetry_Initialize(horusTelemetry* pVal);
 #define ERR_UPER_ENCODE_TELEMETRY_GNSSPOWERSAVESTATE_2		252  /**/
 #define ERR_UPER_ENCODE_TELEMETRY_CUSTOMDATA		257  /**/
 #define horusTelemetry_REQUIRED_BYTES_FOR_ENCODING       1336
-#define horusTelemetry_REQUIRED_BITS_FOR_ENCODING        10684
+#define horusTelemetry_REQUIRED_BITS_FOR_ENCODING        10687
 
 flag horusTelemetry_Encode(const horusTelemetry* pVal, BitStream* pBitStrm, int* pErrCode, flag bCheckConstraints);
 
@@ -522,8 +522,8 @@ flag horusTelemetry_Encode(const horusTelemetry* pVal, BitStream* pBitStrm, int*
 #define ERR_UPER_DECODE_TELEMETRY_VELOCITYHORIZONTALKILOMETERSPERHOUR		203  /**/
 #define ERR_UPER_DECODE_TELEMETRY_GNSSSATELLITESVISIBLE		208  /**/
 #define ERR_UPER_DECODE_TELEMETRY_ASCENTRATECENTIMETERSPERSECOND		213  /**/
-#define ERR_UPER_DECODE_TELEMETRY_PRESSUREHPA		218  /**/
-#define ERR_UPER_DECODE_TELEMETRY_TEMPERATURECELSIUS		223  /**/
+#define ERR_UPER_DECODE_TELEMETRY_PRESSUREHPA_X10		218  /**/
+#define ERR_UPER_DECODE_TELEMETRY_TEMPERATURECELSIUS_X10		223  /**/
 #define ERR_UPER_DECODE_TELEMETRY_HUMIDITYPERCENTAGE		228  /**/
 #define ERR_UPER_DECODE_TELEMETRY_MILLIVOLTS		233  /**/
 #define ERR_UPER_DECODE_TELEMETRY_COUNTS		243  /**/
