@@ -134,7 +134,7 @@ int pipRepeat = 3;                  //pip signal repeat count in 1 transmit grou
 int pipRadioPower = 6; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
 bool horusEnable = true;  //horus v2 tx mode
-float horusFrequencyMhz = 434.2;
+float horusFrequencyMhz = 434.210;
 unsigned long horusWait = 0;           //same as in pip but after horus
 unsigned int horusPayloadId = 256;
 #define HORUS_V3_CALLSIGN "HORUS-V3" // Callsign for Horus v3
@@ -258,7 +258,7 @@ int heatingTemperatureThreshold = 2; //turns on only in conditions where condens
 int heatingHumidityThreshold = 90; //turns on only in conditions where condensation would be really possible
 
 
-bool enablePressureEstimation = true; //This option enables an algorithm that estimates the pressure of dry air, based on altitude, temperature and humidity. It is NOT read from any pressure sensor, like an RPM411 board (now!), but can give you a fair enough reading, more of an 'order of magnitude'. The pressureValue is sent via Horus v2 and APRS WX
+bool enablePressureEstimation = false; //This option enables an algorithm that estimates the pressure of dry air, based on altitude, temperature and humidity. It is NOT read from any pressure sensor, like an RPM411 board (now!), but can give you a fair enough reading, more of an 'order of magnitude'. The pressureValue is sent via Horus v2 and APRS WX
 unsigned long seaLevelPressure = 101325; //Sea level pressure in Pascals, used to correctly estimate the pressure in the upper layers
 
 
@@ -280,7 +280,7 @@ unsigned int burstDetectionThreshold = 500;  //describes threshold value, which 
 //System
 bool autoResetEnable = true;                              //automatically reset the CPU after specified time below, useful in stationary continuous use, to prevent from overflowing some variables
 #define SYSTEM_RESET_PERIOD (14UL * 24 * 60 * 60 * 1000)  // 14 days in milliseconds
-int buttonMode = 1;                                 //0 - button operation disabled, 1 - the button can turn the sonde OFF, 2 - extended mode, allowing to control radio power and if the transmission should be enabled and shutdown. If you want to fly a sonde with PV or on 1xAA hardware, consider disabling the button and shorting its pins for always closed state. NOTE: the button will only operate when the sonde has fully started (after calibration, compensation, hardware configuration etc.)
+int buttonMode = 0;                                 //0 - button operation disabled, 1 - the button can turn the sonde OFF, 2 - extended mode, allowing to control radio power and if the transmission should be enabled and shutdown. If you want to fly a sonde with PV or on 1xAA hardware, consider disabling the button and shorting its pins for always closed state. NOTE: the button will only operate when the sonde has fully started (after calibration, compensation, hardware configuration etc.)
 
 
 //dataRecoder config
