@@ -17,7 +17,7 @@ https://github.com/Nevvman18/rs41-nfw
 #include <SPI.h>
 #include <TinyGPSPlus.h>
 
-// Two includes for Horus Binary v3
+// Include Horus v3 lib
 #include "HorusBinaryV3.h"
 
 
@@ -133,11 +133,15 @@ int pipLengthMs = 1000;             //pip signal length in ms
 int pipRepeat = 3;                  //pip signal repeat count in 1 transmit group
 int pipRadioPower = 6; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
-bool horusEnable = true;  //horus v2 tx mode
-float horusFrequencyMhz = 434.210;
+bool horusEnable = true;  //horus v3 tx mode
+float horusFrequencyMhz = 434.200;
 unsigned long horusWait = 0;           //same as in pip but after horus
+// Payload ID for Horus v2 (not used in this fork!)
 unsigned int horusPayloadId = 256;
-#define HORUS_V3_CALLSIGN "HORUS-V3" // Callsign for Horus v3
+// Callsign for Horus v3
+// NOTES - Every character adds 6 bits to your packet size.
+// Try and limit the vallsign to 6-8 characters. 
+#define HORUS_V3_CALLSIGN "4FSKTEST-V3" 
 int horusBdr = 100;
 int horusRadioPower = 5; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
@@ -3000,7 +3004,14 @@ void lowAltitudeFastTxMode() {
     pressureEstimation();
 
     if (horusEnable) {
-      int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+      //int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+
+      // Horus v3 'override'
+      int pkt_len = build_horus_binary_packet_v3(rawbuffer);
+      // Bomb out if we can't encode
+      if (pkt_len == 0){
+        return;
+      }
       int coded_len = horus_l2_encode_tx_packet((unsigned char*)codedbuffer, (unsigned char*)rawbuffer, pkt_len);
 
       setRadioModulation(0);  // CW modulation
@@ -3213,8 +3224,7 @@ void horusTx() {
     if (radioEnablePA) {
       //int pkt_len = build_horus_binary_packet_v2(rawbuffer);
 
-      // QI - OVERRIDE for Horus v3 testing
-      // The rest of the function is the same though
+      // Horus v3 'override'
       int pkt_len = build_horus_binary_packet_v3(rawbuffer);
       // Bomb out if we can't encode
       if (pkt_len == 0){
@@ -3256,7 +3266,7 @@ void horusTx() {
       radioEnableTx();
 
       fsk4_idle();
-      delay(750);
+      delay(100);
       fsk4_preamble(8);
       fsk4_write(codedbuffer, coded_len);
 
@@ -3290,7 +3300,14 @@ void horusSecondTransmissionTx() {
       }
 
       if (radioEnablePA) {
-        int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+        //int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+
+        // Horus v3 'override'
+        int pkt_len = build_horus_binary_packet_v3(rawbuffer);
+        // Bomb out if we can't encode
+        if (pkt_len == 0){
+          return;
+        }
         int coded_len = horus_l2_encode_tx_packet((unsigned char*)codedbuffer, (unsigned char*)rawbuffer, pkt_len);
 
         if (xdataPortMode == 1) {
@@ -3325,7 +3342,7 @@ void horusSecondTransmissionTx() {
         radioEnableTx();
 
         fsk4_idle();
-        delay(750);
+        delay(100);
         fsk4_preamble(8);
         fsk4_write(codedbuffer, coded_len);
 
@@ -3465,7 +3482,14 @@ void ultraPowerSaveHandler() {
       setRadioPower(6); //NOTE: power save mode changes the power to 50mW, which may not be what a powersave is meant to be. However, sonde laying on the ground has a very poor radio propagation and range, therefore a couple second long transmission won't impact it much
       for (;;) {
         if (horusEnable) {
-          int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+          //int pkt_len = build_horus_binary_packet_v2(rawbuffer);
+
+          // Horus v3 'override'
+          int pkt_len = build_horus_binary_packet_v3(rawbuffer);
+          // Bomb out if we can't encode
+          if (pkt_len == 0){
+            return;
+          }
           int coded_len = horus_l2_encode_tx_packet((unsigned char*)codedbuffer, (unsigned char*)rawbuffer, pkt_len);
 
           setRadioModulation(0);  // CW modulation
@@ -3474,7 +3498,7 @@ void ultraPowerSaveHandler() {
           radioEnableTx();
 
           fsk4_idle();
-          delay(100);
+          delay(50);
           fsk4_preamble(8);
           fsk4_write(codedbuffer, coded_len);
           radioDisableTx();

@@ -1,4 +1,21 @@
-# RS41-NFW - Versatile, custom firmware for ALL revisions of Vaisala RS41 radiosondes
+# RS41-NFW - Versatile, custom firmware for ~~ALL revisions of Vaisala RS41 radiosondes~~
+
+## Horus V3 Developmental Fork - INTERIM USE ONLY!
+This is a temporary fork of RS41-NFW intended to provide some initial RS41 firmware which supports the new [Horus Binary v3](https://github.com/projecthorus/horusdemodlib/wiki/99-Horus-Binary-v3-Beta-Testing-Notes) telemetry mode, until Nevvman can add support into the upstream repository
+
+Notes on changes:
+* Due to the increased code size (and not much optimization), **this fork only supports the newer RSM4x4 and RSM4x5 revision RS41 boards**.
+* All Horus v2 transmissions are replaced with Horus v3 transmissions.
+* Sensor stalk telemetry has been added as Horus v3 optional fields, and will only be sent if the sensor stalk is enabled.
+* The internal debug state is sent as a custom field (a good example of how to send a custom integer field)
+* Payload IDs are not used in Horus v3, intstead look for the new `HORUS_V3_CALLSIGN` setting in the Horus config area.
+* Other than the callsign changes, all other settings should be configurable as per the existing documentation.
+
+It's quite possible that some functionality will be broken - if you find issues please email me at vk5qi@rfhead.net or find me on the [Sondehub Discord](https://sondehub.org/go/discord/).
+
+73
+Mark VK5QI
+
 ## **Vaisala RS41 New Firmware** (*RS41 Nevvman's Firmware*) <br>
 **NOTE:** This firmware works with the **ALL** variants of RS41 radiosondes, with the new (2023 and 2025) ones too, bringing full hardware and software support with lots of features for everyone. More below.<br><br>
 Vaisala some time ago began launching new RS41 sonde revisions, with new internal design. They can be recognized by a last digit of 4 or 5 of the PCB model (eg. `RSM414`, `RSM424`, `RSM425`). This firmware is an approach for reusing them as amateur devices for many different purposes. It brings full and thorough support for [all revisions](../hw/README.md#older-vs-newer---how-do-i-know-which-one-im-holding-now).<br>
