@@ -134,10 +134,10 @@ int pipRepeat = 3;                  //pip signal repeat count in 1 transmit grou
 int pipRadioPower = 6; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
 bool horusEnable = true;  //horus v2 tx mode
-float horusFrequencyMhz = 434.210;
+float horusFrequencyMhz = 434.200;
 unsigned long horusWait = 0;           //same as in pip but after horus
 unsigned int horusPayloadId = 256;
-#define HORUS_V3_CALLSIGN "HORUS-V3" // Callsign for Horus v3
+#define HORUS_V3_CALLSIGN "VK3FUR" // Callsign for Horus v3
 int horusBdr = 100;
 int horusRadioPower = 5; //TX power, 0 = -1dBm (~0.8mW), 1 = 2dBm (~1.6mW), 2 = 5dBm (~3 mW), 3 = 8dBm (~6 mW), 4 = 11dBm (~12 mW), 5 = 14dBm (25 mW), 6 = 17dBm (50 mW), 7 = 20dBm (100 mW)
 
@@ -280,7 +280,7 @@ unsigned int burstDetectionThreshold = 500;  //describes threshold value, which 
 //System
 bool autoResetEnable = true;                              //automatically reset the CPU after specified time below, useful in stationary continuous use, to prevent from overflowing some variables
 #define SYSTEM_RESET_PERIOD (14UL * 24 * 60 * 60 * 1000)  // 14 days in milliseconds
-int buttonMode = 0;                                 //0 - button operation disabled, 1 - the button can turn the sonde OFF, 2 - extended mode, allowing to control radio power and if the transmission should be enabled and shutdown. If you want to fly a sonde with PV or on 1xAA hardware, consider disabling the button and shorting its pins for always closed state. NOTE: the button will only operate when the sonde has fully started (after calibration, compensation, hardware configuration etc.)
+int buttonMode = 1;                                 //0 - button operation disabled, 1 - the button can turn the sonde OFF, 2 - extended mode, allowing to control radio power and if the transmission should be enabled and shutdown. If you want to fly a sonde with PV or on 1xAA hardware, consider disabling the button and shorting its pins for always closed state. NOTE: the button will only operate when the sonde has fully started (after calibration, compensation, hardware configuration etc.)
 
 
 //dataRecoder config
@@ -947,6 +947,10 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
   // Need to check how this is allocated in memory. how much it uses.
   // .. also does it get cleared?
 
+  int hr = 0;
+  while (xdataSerial.available()){
+    hr = xdataSerial.read();
+  }
 
   horusTelemetry asnMessage = {
         .payloadCallsign  = HORUS_V3_CALLSIGN,
@@ -961,13 +965,13 @@ int build_horus_binary_packet_v3(char* uncoded_buffer){
           .arr = {
             // Example of an array of integers 
             {
-                .name = "debug", // This is transmitted in the packet if .exist/name is true
+                .name = "hr", // This is transmitted in the packet if .exist/name is true
                 .values = {
                     .kind = horusInt_PRESENT,
                     .u = {
                         .horusInt = {
                           .nCount = 1,
-                            .arr = {deviceDebugState},
+                            .arr = {hr},
                         }
                     }
                 },
