@@ -1,17 +1,19 @@
 # RS41-NFW - Versatile, custom firmware for ~~ALL revisions of Vaisala RS41 radiosondes~~
 
 ## Horus V3 Developmental Fork - INTERIM USE ONLY!
-This is a temporary fork of RS41-NFW intended to provide some initial RS41 firmware which supports the new [Horus Binary v3](https://github.com/projecthorus/horusdemodlib/wiki/99-Horus-Binary-v3-Beta-Testing-Notes) telemetry mode, until Nevvman can add support into the upstream repository
+This is a temporary fork of RS41-NFW intended to provide some initial RS41 firmware which supports the new [Horus Binary v3](https://github.com/projecthorus/horusdemodlib/wiki/99-Horus-Binary-v3-Beta-Testing-Notes) telemetry mode, until Nevvman can add support into the upstream repository.
+
+I highly recommend flying a known-good Horus v2 tracker on your launches alongside this, until we have verified there are no issues! This code comes with no guarantees!
 
 Notes on changes:
 * Due to the increased code size (and not much optimization), **this fork only supports the newer RSM4x4 and RSM4x5 revision RS41 boards**.
 * All Horus v2 transmissions are replaced with Horus v3 transmissions.
 * Sensor stalk telemetry has been added as Horus v3 optional fields, and will only be sent if the sensor stalk is enabled.
 * The internal debug state is sent as a custom field (a good example of how to send a custom integer field)
-* Payload IDs are not used in Horus v3, intstead look for the new `HORUS_V3_CALLSIGN` setting in the Horus config area.
+* Payload IDs are not used in Horus v3, intstead look for the new `HORUS_V3_CALLSIGN` setting in the [Horus config area](https://github.com/darksidelemm/rs41-nfw/blob/main/fw/fw-files/rs41-nfw/rs41-nfw.ino#L144).
 * Other than the callsign changes, all other settings should be configurable as per the existing documentation.
 
-It's quite possible that some functionality will be broken - if you find issues please email me at vk5qi@rfhead.net or find me on the [Sondehub Discord](https://sondehub.org/go/discord/).
+It's quite possible that some functionality will be broken (hopefully nothing that impacts tracking!) - if you find issues please email me at vk5qi@rfhead.net or find me on the [Sondehub Discord](https://sondehub.org/go/discord/).
 
 73
 Mark VK5QI
